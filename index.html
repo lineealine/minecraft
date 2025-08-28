@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft: Um Mundo de Blocos</title>
+  <style>
+    /* ====== CSS Página Inicial ====== */
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      overflow: hidden;
+      background-image: url("https://wallpapercave.com/wp/wp5961273.jpg");
+      background-repeat: no-repeat;
+      background-size: cover;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+    }
+
+
+    .dive {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 50px;
+    }
+
+
+    .logo {
+      height: 400px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+
+    #start-btn {
+      padding: 20px 60px;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      background-color: #228B22;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0px 0px 15px rgba(0,0,0,0.5);
+    }
+
+
+    #start-btn:hover {
+      background-color: #2ecc71;
+      transform: scale(1.1);
+      box-shadow: 0px 0px 25px #2ecc71;
+    }
+
+
+    /* ====== CSS do Jogo ====== */
+    #game {
+      display: none;
+      padding: 20px;
+    }
+
+
+    #click-target {
+      width: 180px;
+      cursor: pointer;
+      transition: transform 0.1s;
+      margin-top: 20px;
+    }
+
+
+    #click-target:active {
+      transform: scale(0.9);
+    }
+
+
+    #progress-container {
+      width: 200px;
+      height: 12px;
+      background-color: #ddd;
+      margin: 10px auto;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: #4caf50;
+      transition: width 0.1s;
+    }
+
+
+    #inventory {
+      margin-top: 20px;
+      font-size: 18px;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 10px;
+      border-radius: 10px;
+      width: 250px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+
+    #choices {
+      margin-top: 20px;
+    }
+
+
+    .choice-btn {
+      display: inline-block;
+      background-color: #3f51b5;
+      color: #fff;
+      padding: 12px 25px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 8px;
+      transition: all 0.2s;
+      border: none;
+    }
+
+
+    .choice-btn:hover {
+      background-color: #2196f3;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <!-- Tela Inicial -->
+  <div id="tela-inicial">
+    <div class="dive">
+      <img src="https://logos-world.net/wp-content/uploads/2020/05/Minecraft-Logo.png" alt="Logo Minecraft" class="logo">
+    </div>
+    <button id="start-btn">INICIAR JOGO</button>
+    <audio id="click-sound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4d3a1c0d82.mp3?filename=click-124467.mp3"></audio>
+  </div>
+
+
+  <!-- Jogo -->
+  <div id="game">
+    <h1>⛏ Um Mundo de Blocos</h1>
+    <p id="story">Você acorda em um mundo de blocos. Clique na árvore para coletar madeira.</p>
+
+
+    <div id="resource-area">
+      <img id="click-target" src="https://minecraft.wiki/images/Oak_Log_%28UD%29_JE8_BE3.png?8a080" alt="Árvore" />
+      <div id="progress-container">
+        <div id="progress-bar"></div>
+      </div>
+    </div>
+
+
+    <div id="inventory">
+      <p>🌳 Madeira: <span id="wood">0</span></p>
+      <p> Pedra: <span id="stone">0</span></p>
+      <p>⚒ Itens: <span id="items">Nenhum</span></p>
+    </div>
+
+
+    <div id="choices"></div>
+
+
+    <audio id="sound-click" src="https://cdn.pixabay.com/audio/2022/03/15/audio_9ad6b13f56.mp3"></audio>
+    <audio id="sound-success" src="https://cdn.pixabay.com/audio/2022/03/15/audio_3f4a73e2d4.mp3"></audio>
+    <audio id="sound-ambient" src="https://cdn.pixabay.com/audio/2022/03/15/audio_ee4aefc55c.mp3" loop autoplay></audio>
+  </div>
+
+
+  <script>
+    // ====== JS Página Inicial ======
+    document.getElementById("start-btn").addEventListener("click", () => {
+      const clickSound = document.getElementById("click-sound");
+      clickSound.currentTime = 0;
+      clickSound.play();
+
+
+      document.getElementById("tela-inicial").style.display = "none";
+      document.getElementById("game").style.display = "block";
+    });
+
+
+    // ====== JS do Jogo ======
+    let wood = 0;
+    let stone = 0;
+    let items = [];
+    let stage = 1;
+    let progress = 0;
+    let isMining = false;
+
+
+    const clickTarget = document.getElementById("click-target");
+    const story = document.getElementById("story");
+    const woodDisplay = document.getElementById("wood");
+    const stoneDisplay = document.getElementById("stone");
+    const itemsDisplay = document.getElementById("items");
+    const progressBar = document.getElementById("progress-bar");
+    const choicesDiv = document.getElementById("choices");
+
+
+    const soundClick = document.getElementById("sound-click");
+    const soundSuccess = document.getElementById("sound-success");
+
+
+    clickTarget.addEventListener("click", () => {
+      if (isMining) return;
+      isMining = true;
+      progress = 0;
+      progressBar.style.width = "0%";
+      soundClick.play();
+
+
+      const interval = setInterval(() => {
+        progress += 10;
+        progressBar.style.width = progress + "%";
+
+
+        if (progress >= 100) {
+          clearInterval(interval);
+          isMining = false;
+          progressBar.style.width = "0%";
+
+
+          if (stage === 1) {
+            wood++;
+            woodDisplay.textContent = wood;
+            if (wood >= 5) nextStage();
+          } else if (stage === 2) {
+            stone++;
+            stoneDisplay.textContent = stone;
+            if (stone >= 5) nextStage();
+          }
+        }
+      }, 100);
+    });
+
+
+    function nextStage() {
+      stage++;
+      soundSuccess.play();
+
+
+      if (stage === 2) {
+        story.textContent = "Com madeira suficiente, você cria uma picareta! Agora clique na pedra para minerar.";
+        clickTarget.src = "https://minecraft.wiki/images/thumb/Stone_JE8.png/150px-Stone_JE8.png?b5028";
+        items.push("Picareta de Madeira");
+        itemsDisplay.textContent = items.join(", ");
+      }
+      else if (stage === 3) {
+        story.textContent = "Você constrói uma fornalha! Agora, precisa decidir seu caminho...";
+        clickTarget.style.display = "none";
+        choicesDiv.innerHTML = `
+          <button class="choice-btn" onclick="explorar()">🌍 Explorar</button>
+          <button class="choice-btn" onclick="construir()">🏠 Construir abrigo</button>
+          <button class="choice-btn" onclick="lutar()">⚔ Procurar monstros</button>
+        `;
+      }
+    }
+
+
+    function explorar() {
+      story.textContent = "Você encontra uma caverna misteriosa... deseja entrar?";
+      choicesDiv.innerHTML = `
+        <button class="choice-btn" onclick="entrarCaverna()">🌌 Entrar</button>
+        <button class="choice-btn" onclick="voltarCampo()">↩ Voltar</button>
+      `;
+    }
+
+
+    function construir() {
+      story.textContent = "Você construiu uma cabana simples. Está seguro por enquanto!";
+      choicesDiv.innerHTML = `
+        <button class="choice-btn" onclick="explorar()">🌍 Explorar no dia seguinte</button>
+      `;
+      items.push("Abrigo Seguro");
+      itemsDisplay.textContent = items.join(", ");
+    }
+
+
+    function lutar() {
+      story.textContent = "Um zumbi aparece à noite! Você luta bravamente e sobrevive.";
+      choicesDiv.innerHTML = `
+        <button class="choice-btn" onclick="explorar()">🌍 Explorar ao amanhecer</button>
+      `;
+      items.push("Vitória contra zumbi");
+      itemsDisplay.textContent = items.join(", ");
+    }
+
+
+    function entrarCaverna() {
+      story.textContent = "Dentro da caverna, você encontra ferro! Pode criar ferramentas melhores.";
+      choicesDiv.innerHTML = `
+        <button class="choice-btn" onclick="finalJogo()">✨ Fundir ferro</button>
+      `;
+      items.push("Minério de Ferro");
+      itemsDisplay.textContent = items.join(", ");
+    }
+
+
+    function voltarCampo() {
+      story.textContent = "Você volta para o campo aberto. O que deseja fazer?";
+      choicesDiv.innerHTML = `
+        <button class="choice-btn" onclick="explorar()">🌍 Explorar</button>
+        <button class="choice-btn" onclick="construir()">🏠 Construir abrigo</button>
+        <button class="choice-btn" onclick="lutar()">⚔ Procurar monstros</button>
+      `;
+    }
+
+
+    function finalJogo() {
+      story.textContent = "Parabéns! Você forjou ferramentas de ferro e sua aventura continua em um mundo de blocos infinito... 🏆";
+      choicesDiv.innerHTML = `
+        <button class="choice-btn" onclick="location.reload()">🔄 Jogar de novo</button>
+      `;
+      items.push("Ferramentas de Ferro");
+      itemsDisplay.textContent = items.join(", ");
+    }
+  </script>
+</body>
+</html>
+
+
